@@ -9,7 +9,7 @@ import (
 )
 
 // GetCurrenciesFromAPI method which gets currency codes from cbr.ru API
-func (s Service) GetCurrenciesFromAPI() (map[string]bool, error) {
+func (s *Service) GetCurrenciesFromAPI() (map[string]bool, error) {
 	currencyCodesMap := make(map[string]bool)
 
 	request, err := http.NewRequest("GET", CurrencyCodesEndpoint, nil)

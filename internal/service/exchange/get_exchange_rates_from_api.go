@@ -15,7 +15,7 @@ import (
 )
 
 // GetExchangeRateFromAPI method which gets exchange rates from cbr.ru API
-func (s Service) GetExchangeRateFromAPI(_ context.Context, val string, date string) (json.RawMessage, error) {
+func (s *Service) GetExchangeRateFromAPI(_ context.Context, val string, date string) (json.RawMessage, error) {
 	url := fmt.Sprintf(FindByDateEndpoint, date)
 
 	request, err := http.NewRequest("GET", url, nil)

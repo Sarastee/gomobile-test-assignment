@@ -97,8 +97,8 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 
-func (a *App) initHTTPServer(_ context.Context) error {
-	i := a.serviceProvider.ExchangeImpl()
+func (a *App) initHTTPServer(ctx context.Context) error {
+	i := a.serviceProvider.ExchangeImpl(ctx)
 
 	mux := http.NewServeMux()
 

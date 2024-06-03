@@ -11,7 +11,10 @@ import (
 	"github.com/sarastee/gomobile-test-assignment/internal/api/exchange"
 	"github.com/sarastee/gomobile-test-assignment/internal/config"
 	"github.com/sarastee/gomobile-test-assignment/internal/config/env"
+	"github.com/sarastee/gomobile-test-assignment/internal/repository"
+	exchangeCacheRepository "github.com/sarastee/gomobile-test-assignment/internal/repository/caches/exchange"
 	"github.com/sarastee/gomobile-test-assignment/internal/service"
+	exchangeCacheService "github.com/sarastee/gomobile-test-assignment/internal/service/caches/exchange"
 	exchangeService "github.com/sarastee/gomobile-test-assignment/internal/service/exchange"
 	"github.com/sarastee/platform_common/pkg/closer"
 	"github.com/sarastee/platform_common/pkg/db"
@@ -31,9 +34,10 @@ type serviceProvider struct {
 	txManager     db.TxManager
 	redisDbClient memory_db.Client
 
-	// currency repo layer
+	exchangeCacheRepo repository.ExchangeCacheRepository
 
-	exchangeService service.ExchangeService
+	exchangeService      service.ExchangeService
+	exchangeCacheService service.ExchangeCacheService
 
 	exchangeImpl *exchange.Implementation
 }
@@ -147,7 +151,7 @@ func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	return s.dbClient
 }
 
-func (s *serviceProvider) RedisDBClient(_ context.Context) memory_db.Client {
+func (s *serviceProvider) RedisDBClient(ctx context.Context) memory_db.Client {
 	if s.redisDbClient == nil {
 		redisConfig := s.RedisConfig()
 		redisPool := &redis.Pool{
@@ -166,6 +170,11 @@ func (s *serviceProvider) RedisDBClient(_ context.Context) memory_db.Client {
 		}
 		s.redisDbClient = rs.New(redisPool)
 
+		_, err := s.redisDbClient.DB().DoContext(ctx, "PING")
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+
 		log.Printf("Redis connected at %s", redisConfig.Address())
 
 		closer.Add(s.redisDbClient.Close)
@@ -183,6 +192,25 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
+func (s *serviceProvider) ExchangeCacheRepository(ctx context.Context) repository.ExchangeCacheRepository {
+	if s.exchangeCacheRepo == nil {
+		s.exchangeCacheRepo = exchangeCacheRepository.NewExchangeCacheRepo(
+			s.RedisDBClient(ctx),
+			s.RedisConfig())
+	}
+
+	return s.exchangeCacheRepo
+}
+
+func (s *serviceProvider) ExchangeCacheService(ctx context.Context) service.ExchangeCacheService {
+	if s.exchangeCacheService == nil {
+		s.exchangeCacheService = exchangeCacheService.NewService(
+			s.ExchangeCacheRepository(ctx))
+	}
+
+	return s.exchangeCacheService
+}
+
 func (s *serviceProvider) ExchangeService() service.ExchangeService {
 	if s.exchangeService == nil {
 		s.exchangeService = exchangeService.NewService(
@@ -193,11 +221,12 @@ func (s *serviceProvider) ExchangeService() service.ExchangeService {
 	return s.exchangeService
 }
 
-func (s *serviceProvider) ExchangeImpl() *exchange.Implementation {
+func (s *serviceProvider) ExchangeImpl(ctx context.Context) *exchange.Implementation {
 	if s.exchangeImpl == nil {
 		s.exchangeImpl = exchange.NewImplementation(
 			s.Logger(),
-			s.ExchangeService())
+			s.ExchangeService(),
+			s.ExchangeCacheService(ctx))
 	}
 
 	return s.exchangeImpl
