@@ -8,8 +8,11 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/rs/zerolog"
+	"github.com/sarastee/gomobile-test-assignment/internal/api/exchange"
 	"github.com/sarastee/gomobile-test-assignment/internal/config"
 	"github.com/sarastee/gomobile-test-assignment/internal/config/env"
+	"github.com/sarastee/gomobile-test-assignment/internal/service"
+	exchangeService "github.com/sarastee/gomobile-test-assignment/internal/service/exchange"
 	"github.com/sarastee/platform_common/pkg/closer"
 	"github.com/sarastee/platform_common/pkg/db"
 	"github.com/sarastee/platform_common/pkg/db/pg"
@@ -30,9 +33,9 @@ type serviceProvider struct {
 
 	// currency repo layer
 
-	// currency service
+	exchangeService service.ExchangeService
 
-	// currency api layer
+	exchangeImpl *exchange.Implementation
 }
 
 func newServiceProvider() *serviceProvider {
@@ -178,4 +181,24 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	}
 
 	return s.txManager
+}
+
+func (s *serviceProvider) ExchangeService() service.ExchangeService {
+	if s.exchangeService == nil {
+		s.exchangeService = exchangeService.NewService(
+			s.Logger(),
+		)
+	}
+
+	return s.exchangeService
+}
+
+func (s *serviceProvider) ExchangeImpl() *exchange.Implementation {
+	if s.exchangeImpl == nil {
+		s.exchangeImpl = exchange.NewImplementation(
+			s.Logger(),
+			s.ExchangeService())
+	}
+
+	return s.exchangeImpl
 }
