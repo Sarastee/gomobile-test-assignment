@@ -1,0 +1,61 @@
+basePath: /
+definitions:
+  model.Error:
+    properties:
+      err:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact:
+    email: ilja.sarasti@mail.ru
+    name: Ilya Lyakhov
+  description: Сервис для получения курса валют
+  title: Currency Service
+  version: 1.0.0
+paths:
+  /currency:
+    get:
+      description: API layer method which handles GET /currency request and pull out
+        currency rate from cache or cbr.ru API
+      parameters:
+      - default: application/json
+        description: Content Type
+        in: header
+        name: Content-type
+        required: true
+        type: string
+      - description: Date
+        in: query
+        name: date
+        type: string
+      - description: Valute
+        in: query
+        name: val
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Currency rate in json format
+          schema:
+            type: object
+        "400":
+          description: Incorrect provided data
+          schema:
+            $ref: '#/definitions/model.Error'
+        "404":
+          description: Currency rate not found
+          schema:
+            $ref: '#/definitions/model.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/model.Error'
+      summary: Get Currency rate by data and currency char code
+      tags:
+      - Get Exchange Rate
+schemes:
+- http
+swagger: "2.0"
