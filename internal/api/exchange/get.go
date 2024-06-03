@@ -15,7 +15,23 @@ import (
 
 var globalAPICodes map[string]bool
 
-// GetExchangeRate API method which handles GET /currency endpoint
+// GetExchangeRate ...
+//
+// @Summary Get Currency rate by data and currency char code
+// @Description API layer method which handles GET /currency request and pull out currency rate from cache or cbr.ru API
+// @Tags Get Exchange Rate
+//
+// @Param Content-type header string true "Content Type" default(application/json)
+// @Param date query string false "Date"
+// @Param val query string true "Valute"
+// @Produce json
+//
+// @Success 200 {object} any "Currency rate in json format"
+// @Failure 400 {object} model.Error "Incorrect provided data"
+// @Failure 404 {object} model.Error "Currency rate not found"
+// @Failure 500 {object} model.Error "Internal server error"
+//
+// @Router /currency [get]
 func (i *Implementation) GetExchangeRate(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		err := r.Body.Close()

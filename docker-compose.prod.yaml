@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:7.2.4
+    restart: always
+    expose:
+      - "${REDIS_PORT}"
+    env_file:
+      - deploy/env/.env.prod
+    command: --port ${REDIS_PORT}
+
+  app:
+    build:
+      context: .
+      dockerfile: deploy/dockerfiles/exchange.Dockerfile
+    env_file:
+      - deploy/env/.env.prod
+    depends_on:
+      - redis
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${SWAGGER_PORT}:${SWAGGER_PORT}"
+    restart: on-failure

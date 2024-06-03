@@ -1,0 +1,90 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "Сервис для получения курса валют",
+        "title": "Currency Service",
+        "contact": {
+            "name": "Ilya Lyakhov",
+            "email": "ilja.sarasti@mail.ru"
+        },
+        "version": "1.0.0"
+    },
+    "host": "localhost:8082",
+    "basePath": "/",
+    "paths": {
+        "/currency": {
+            "get": {
+                "description": "API layer method which handles GET /currency request and pull out currency rate from cache or cbr.ru API",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Get Exchange Rate"
+                ],
+                "summary": "Get Currency rate by data and currency char code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "application/json",
+                        "description": "Content Type",
+                        "name": "Content-type",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Valute",
+                        "name": "val",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Currency rate in json format",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Incorrect provided data",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Currency rate not found",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/model.Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.Error": {
+            "type": "object",
+            "properties": {
+                "err": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
