@@ -12,14 +12,16 @@ const (
 
 // Implementation struct
 type Implementation struct {
-	logger          *zerolog.Logger
-	exchangeService service.ExchangeService
+	logger               *zerolog.Logger
+	exchangeService      service.ExchangeService
+	exchangeCacheService service.ExchangeCacheService
 }
 
 // NewImplementation function which creates Implementation object
-func NewImplementation(logger *zerolog.Logger, exchangeService service.ExchangeService) *Implementation {
+func NewImplementation(logger *zerolog.Logger, exchangeService service.ExchangeService, exchangeCacheService service.ExchangeCacheService) *Implementation {
 	return &Implementation{
-		logger:          logger,
-		exchangeService: exchangeService,
+		logger:               logger,
+		exchangeService:      exchangeService,
+		exchangeCacheService: exchangeCacheService,
 	}
 }

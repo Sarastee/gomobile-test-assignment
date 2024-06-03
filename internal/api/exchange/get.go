@@ -1,11 +1,13 @@
 package exchange
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/sarastee/gomobile-test-assignment/internal/api"
+	"github.com/sarastee/gomobile-test-assignment/internal/repository"
 	"github.com/sarastee/gomobile-test-assignment/internal/service"
 	"github.com/sarastee/gomobile-test-assignment/internal/utils/response"
 	"github.com/sarastee/gomobile-test-assignment/internal/utils/validator"
@@ -65,6 +67,18 @@ func (i *Implementation) GetExchangeRate(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	exchangeRateFromCache, err := i.exchangeCacheService.GetCache(r.Context(), val, date)
+	if err != nil {
+		if !errors.Is(err, repository.ErrCacheNotFound) {
+			i.logger.Info().Msg(repository.ErrCacheNotFound.Error())
+		}
+		i.logger.Info().Msg(err.Error())
+	} else {
+		i.logger.Info().Msg("cache found")
+		response.SendStatus(w, http.StatusOK, json.RawMessage(exchangeRateFromCache), i.logger)
+		return
+	}
+
 	exchangeRate, err := i.exchangeService.GetExchangeRateFromAPI(r.Context(), val, date)
 	if err != nil {
 		if errors.Is(err, service.ErrNoDataFound) {
@@ -73,8 +87,13 @@ func (i *Implementation) GetExchangeRate(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		i.logger.Info().Msg(err.Error())
-		response.SendError(w, http.StatusBadRequest, err, i.logger)
+		response.SendError(w, http.StatusInternalServerError, api.ErrInternalError, i.logger)
 		return
+	}
+
+	err = i.exchangeCacheService.SetCache(r.Context(), val, date, string(exchangeRate))
+	if err != nil {
+		i.logger.Error().Msg(err.Error())
 	}
 
 	response.SendStatus(w, http.StatusOK, exchangeRate, i.logger)
