@@ -11,7 +11,7 @@ type Service struct {
 	exchangeCacheRepo repository.ExchangeCacheRepository
 }
 
-func NewService(exchangeCacheRepository repository.ExchangeCacheRepository) *Service {
+func NewExchangeCacheService(exchangeCacheRepository repository.ExchangeCacheRepository) *Service {
 	return &Service{
 		exchangeCacheRepo: exchangeCacheRepository,
 	}
