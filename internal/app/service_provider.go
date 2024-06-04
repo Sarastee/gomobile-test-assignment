@@ -13,6 +13,7 @@ import (
 	"github.com/sarastee/gomobile-test-assignment/internal/config/env"
 	"github.com/sarastee/gomobile-test-assignment/internal/repository"
 	exchangeCacheRepository "github.com/sarastee/gomobile-test-assignment/internal/repository/caches/exchange"
+	exchangeRepository "github.com/sarastee/gomobile-test-assignment/internal/repository/exchange"
 	"github.com/sarastee/gomobile-test-assignment/internal/service"
 	exchangeCacheService "github.com/sarastee/gomobile-test-assignment/internal/service/caches/exchange"
 	exchangeService "github.com/sarastee/gomobile-test-assignment/internal/service/exchange"
@@ -34,6 +35,7 @@ type serviceProvider struct {
 	txManager     db.TxManager
 	redisDbClient memory_db.Client
 
+	exchangeRepo      repository.ExchangeRepository
 	exchangeCacheRepo repository.ExchangeCacheRepository
 
 	exchangeService      service.ExchangeService
@@ -55,13 +57,14 @@ func (s *serviceProvider) Logger() *zerolog.Logger {
 			log.Fatalf("unable to get Logger config: %s", err.Error())
 		}
 
-		s.logger = setupZeroLog(cfg)
+		s.logger = SetupZeroLog(cfg)
 	}
 
 	return s.logger
 }
 
-func setupZeroLog(logConfig *config.LogConfig) *zerolog.Logger {
+// SetupZeroLog ...
+func SetupZeroLog(logConfig *config.LogConfig) *zerolog.Logger {
 	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: logConfig.TimeFormat}
 	logger := zerolog.New(output).With().Timestamp().Logger()
 	logger = logger.Level(logConfig.LogLevel)
@@ -192,6 +195,16 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
+func (s *serviceProvider) ExchangeRepository(ctx context.Context) repository.ExchangeRepository {
+	if s.exchangeRepo == nil {
+		s.exchangeRepo = exchangeRepository.NewExchangeRepo(
+			s.Logger(),
+			s.DBClient(ctx))
+	}
+
+	return s.exchangeRepo
+}
+
 func (s *serviceProvider) ExchangeCacheRepository(ctx context.Context) repository.ExchangeCacheRepository {
 	if s.exchangeCacheRepo == nil {
 		s.exchangeCacheRepo = exchangeCacheRepository.NewExchangeCacheRepo(
@@ -204,18 +217,18 @@ func (s *serviceProvider) ExchangeCacheRepository(ctx context.Context) repositor
 
 func (s *serviceProvider) ExchangeCacheService(ctx context.Context) service.ExchangeCacheService {
 	if s.exchangeCacheService == nil {
-		s.exchangeCacheService = exchangeCacheService.NewService(
+		s.exchangeCacheService = exchangeCacheService.NewExchangeCacheService(
 			s.ExchangeCacheRepository(ctx))
 	}
 
 	return s.exchangeCacheService
 }
 
-func (s *serviceProvider) ExchangeService() service.ExchangeService {
+func (s *serviceProvider) ExchangeService(ctx context.Context) service.ExchangeService {
 	if s.exchangeService == nil {
-		s.exchangeService = exchangeService.NewService(
+		s.exchangeService = exchangeService.NewExchangeService(
 			s.Logger(),
-		)
+			s.ExchangeRepository(ctx))
 	}
 
 	return s.exchangeService
@@ -225,7 +238,7 @@ func (s *serviceProvider) ExchangeImpl(ctx context.Context) *exchange.Implementa
 	if s.exchangeImpl == nil {
 		s.exchangeImpl = exchange.NewImplementation(
 			s.Logger(),
-			s.ExchangeService(),
+			s.ExchangeService(ctx),
 			s.ExchangeCacheService(ctx))
 	}
 

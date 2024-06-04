@@ -14,6 +14,5 @@ wait_database()
 }
 
 wait_database $PG_HOST $PG_PORT
-wait_database $REDIS_HOST $REDIS_PORT
 
-./exchange_service -config=./deploy/env/.env.prod
+./cron_service -config=./deploy/env/.env.prod

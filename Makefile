@@ -1,7 +1,7 @@
 define setup_env
-	$(eval ENV_FILE := ./deploy/env/.env.$(1))
+	$(eval ENV_FILE := ./deploy/env/.env.$1)
 	@echo "- setup env $(ENV_FILE)"
-	$(eval include ./deploy/env/.env.$(1))
+	$(eval include ./deploy/env/.env.$1)
 	$(eval export)
 endef
 

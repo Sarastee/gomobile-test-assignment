@@ -1,6 +1,19 @@
 version: '3'
 
+volumes:
+  postgres_volume:
+
 services:
+  storage:
+    image: postgres:16.1
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    env_file:
+      - deploy/env/.env.prod
+    ports:
+      - "${PG_PORT}:${PG_PORT}"
+    command: -p ${PG_PORT}
+
   redis:
     image: redis:7.2.4
     restart: always
@@ -10,6 +23,16 @@ services:
       - deploy/env/.env.prod
     command: --port ${REDIS_PORT}
 
+  migrator:
+    build:
+      dockerfile: deploy/dockerfiles/migrator.Dockerfile
+    env_file:
+      - deploy/env/.env.prod
+    depends_on:
+      - storage
+    environment:
+      PG_HOST: storage
+
   app:
     build:
       context: .
@@ -18,7 +41,24 @@ services:
       - deploy/env/.env.prod
     depends_on:
       - redis
+      - storage
+    environment:
+      PG_HOST: storage
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
       - "${SWAGGER_PORT}:${SWAGGER_PORT}"
     restart: on-failure
+
+  cron:
+    build:
+      context: .
+      dockerfile: deploy/dockerfiles/cron.Dockerfile
+    env_file:
+      - deploy/env/.env.prod
+    depends_on:
+      - storage
+    environment:
+      PG_HOST: storage
+    restart: on-failure
+
+
